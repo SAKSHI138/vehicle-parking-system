@@ -4,13 +4,13 @@
     <title>Admin Dashboard</title>
 </head>
 <body>
-    <h1>Welcome Admin, {{ user['full_name'] }}!</h1>
+    <h1>Welcome Admin, {{ 'full_name' }}!</h1>
 
     <ul>
         <li><a href="{{ url_for('create_lot') }}">➕ Create Parking Lot</a></li>
         <li><a href="{{ url_for('view_lots') }}">📋 View All Parking Lots</a></li>
         <li><a href="{{ url_for('add_lot') }}">➕ Add New Lot</a></li>
-        <li><a href="{{ url_for('admin_users') }}">👥 View All Users</a></li>
+        <li><a href="{{ url_for('view_users') }}" class="btn btn-primary">👥 View All Users</a></li>
         <li><a href="{{ url_for('logout') }}">🚪 Logout</a></li>
     </ul>
 </body>

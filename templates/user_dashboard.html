@@ -5,8 +5,28 @@
     <title>User Dashboard</title>
 </head>
 <body>
-    <h2>Welcome, {{ session['user_name'] }}!</h2>
-    <p>This is the user dashboard.</p>
-    <a href="{{ url_for('logout') }}">Logout</a>
+<h2>Welcome {{ full_name }}</h2>
+
+    <h3>Available Parking Lots</h3>
+
+    {% for lot in lots %}
+        <div>
+            <strong>{{ lot.name }} – {{ lot.address }}</strong><br>
+            Total: {{ lot.total_spots }}, Available: {{ lot.available_spots }}
+            {% if lot.available_spots > 0 %}
+                <form action="{{ url_for('reserve', lot_id=lot.id) }}" method="post" style="display:inline;">
+                    <button type="submit">🚗 Reserve Spot</button>
+                </form>
+            {% else %}
+                <span style="color: gray;">❌ No Spots Available</span>
+            {% endif %}
+        </div>
+        <hr>
+    {% endfor %}
+
+    <p>
+        <a href="{{ url_for('user_history') }}">🕓 View Parking History</a> |
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+    </p>
 </body>
 </html>

@@ -1,0 +1,36 @@
+<!-- templates/user_history.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Parking History</title>
+</head>
+<body>
+    <h1>🕒 My Reservation History</h1>
+    {% if history %}
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Booking Time</th>
+                <th>Vehicle Number</th>
+                <th>Lot Name</th>
+                <th>Lot Address</th>
+                <th>Spot Number</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in history %}
+            <tr>
+                <td>{{ row['booking_time'] }}</td>
+                <td>{{ row['vehicle_number'] }}</td>
+                <td>{{ row['lot_name'] }}</td>
+                <td>{{ row['lot_address'] }}</td>
+                <td>{{ row['spot_number'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No reservations found.</p>
+    {% endif %}
+</body>
+</html>

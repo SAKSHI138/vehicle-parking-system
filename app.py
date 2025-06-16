@@ -2,6 +2,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 import os
+from datetime import datetime
+import random
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for sessions
@@ -57,31 +59,27 @@ def login():
         conn.close()
 
         if user:
-            session['user'] = {
-                'id': user['id'],
-                'email': user['email'],
-                'full_name': user['full_name'],
-                'role': user['role']
-            }
-
-            if user['role'] == 'admin':
-                return redirect(url_for('admin_dashboard'))
-            else:
-                return redirect(url_for('user_dashboard'))
-
+            session['id'] = user['id']
+            session['email'] = user['email']
+            session['role'] = user['role']
+            session['full_name'] = user['full_name']   # ✅ Important
+            return redirect(url_for('user_dashboard') if user['role'] == 'user' else url_for('admin_dashboard'))
         else:
-            return '❌ Invalid login credentials.'
-
+            return "❌ Invalid credentials"
     return render_template('login.html')
 
 
 # Admin Dashboard (restricted)
 @app.route('/admin_dashboard')
 def admin_dashboard():
-    if 'user' not in session or session['user']['role'] != 'admin':
+    if 'id' not in session or session.get('role') != 'admin':
         return redirect(url_for('login'))
-    return render_template('admin_dashboard.html', user=session['user'])
 
+    conn = get_db_connection()
+    lots = conn.execute('SELECT * FROM parking_lots').fetchall()
+    conn.close()
+
+    return render_template('admin_dashboard.html', lots=lots, full_name=session.get('full_name'))
 
 @app.route('/create_lot', methods=['GET', 'POST'])
 def create_lot():
@@ -199,27 +197,261 @@ def view_users():
 
     conn = get_db_connection()
     users = conn.execute('''
-        SELECT u.*, ps.spot_number, pl.name as lot_name
+        SELECT u.full_name, u.email, ps.spot_number, pl.name as lot_name
         FROM users u
         LEFT JOIN parking_spots ps ON u.id = ps.current_user_id
         LEFT JOIN parking_lots pl ON ps.lot_id = pl.id
         WHERE u.role = 'user'
     ''').fetchall()
     conn.close()
+
     return render_template('view_users.html', users=users)
 
-# User Dashboard (restricted)
+
 @app.route('/user_dashboard')
 def user_dashboard():
-    if session.get('role') != 'user':
+    if 'id' not in session or session.get('role') != 'user':
         return redirect(url_for('login'))
-    return f"Welcome User, {session.get('user_name')}!"
 
-# Logout
+    user_id = session['id']
+
+    conn = get_db_connection()
+    lots = conn.execute('''
+    SELECT 
+        lots.id,
+        lots.name,
+        lots.address,
+        COUNT(spots.id) AS total_spots,
+        SUM(CASE WHEN spots.is_occupied = 0 THEN 1 ELSE 0 END) AS available_spots
+    FROM parking_lots AS lots
+    LEFT JOIN parking_spots AS spots ON lots.id = spots.lot_id
+    GROUP BY lots.id, lots.name, lots.address
+    ''').fetchall()
+
+    conn.close()
+
+    # ✅ Pass full_name instead of 'user'
+    return render_template('user_dashboard.html', lots=lots, full_name=session['full_name'])
+
+@app.route('/edit_lot/<int:lot_id>', methods=['GET', 'POST'])
+def edit_lot(lot_id):
+    if session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    lot = conn.execute('SELECT * FROM parking_lots WHERE id = ?', (lot_id,)).fetchone()
+
+    if request.method == 'POST':
+        name = request.form['name']
+        address = request.form['address']
+        pin_code = request.form['pin_code']
+        # ❗ Note: We do NOT update total_spots or available_spots to avoid data issues
+
+        conn.execute('''
+            UPDATE parking_lots 
+            SET name = ?, address = ?, pin_code = ?
+            WHERE id = ?
+        ''', (name, address, pin_code, lot_id))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('view_lots'))
+
+    conn.close()
+    return render_template('edit_lot.html', lot=lot)
+
+
+@app.route('/reserve/<int:lot_id>', methods=['POST'])
+def reserve_spot(lot_id):
+    if 'user' not in session or session['user']['role'] != 'user':
+        return redirect(url_for('login'))
+
+    user_id = session['user']['id']
+    vehicle_number = f"AUTO-{user_id}"  # Or capture input if needed
+
+    conn = get_db_connection()
+    spot = conn.execute('''
+        SELECT * FROM parking_spots 
+        WHERE lot_id = ? AND is_occupied = 0
+        LIMIT 1
+    ''', (lot_id,)).fetchone()
+
+    if spot:
+        # Reserve it
+        conn.execute('''
+            UPDATE parking_spots 
+            SET is_occupied = 1, current_user_id = ? 
+            WHERE id = ?
+        ''', (user_id, spot['id']))
+
+        # Insert reservation
+        from datetime import datetime
+        now = datetime.now().isoformat()
+        conn.execute('''
+            INSERT INTO reservations (user_id, spot_id, vehicle_number, booking_time)
+            VALUES (?, ?, ?, ?)
+        ''', (user_id, spot['id'], vehicle_number, now))
+
+        # Insert into parking history (entry)
+        conn.execute('''
+            INSERT INTO parking_history (user_id, spot_id, lot_id, vehicle_number, entry_time)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, spot['id'], lot_id, vehicle_number, now))
+
+        # Decrease available_spots
+        conn.execute('''
+            UPDATE parking_lots SET available_spots = available_spots - 1 WHERE id = ?
+        ''', (lot_id,))
+
+        conn.commit()
+        conn.close()
+        return redirect(url_for('user_dashboard'))
+    else:
+        conn.close()
+        return "❌ No available spots in this lot."
+    
+@app.route('/release', methods=['POST'])
+def release_spot():
+    if 'user' not in session or session['user']['role'] != 'user':
+        return redirect(url_for('login'))
+
+    user_id = session['user']['id']
+    conn = get_db_connection()
+
+    spot = conn.execute('SELECT * FROM parking_spots WHERE current_user_id = ?', (user_id,)).fetchone()
+    if spot:
+        now = datetime.now().isoformat()
+
+        # Update spot
+        conn.execute('''
+            UPDATE parking_spots 
+            SET is_occupied = 0, current_user_id = NULL 
+            WHERE id = ?
+        ''', (spot['id'],))
+
+        # Update lot availability
+        conn.execute('''
+            UPDATE parking_lots 
+            SET available_spots = available_spots + 1 
+            WHERE id = ?
+        ''', (spot['lot_id'],))
+
+        # Update history exit time
+        conn.execute('''
+            UPDATE parking_history 
+            SET exit_time = ? 
+            WHERE user_id = ? AND spot_id = ? AND exit_time IS NULL
+        ''', (now, user_id, spot['id']))
+
+        conn.commit()
+    conn.close()
+    return redirect(url_for('user_dashboard'))
+
+@app.route('/reserve/<int:lot_id>', methods=['POST'])
+def reserve(lot_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user']['id']
+    vehicle_number = f"AUTO-{random.randint(1, 9999)}"
+
+    conn = get_db_connection()
+
+    # ✅ STEP 1: Check if the user already has a reserved spot
+    active = conn.execute('''
+        SELECT * FROM parking_spots
+        WHERE current_user_id = ? AND is_occupied = 1
+    ''', (user_id,)).fetchone()
+
+    if active:
+        conn.close()
+        return "❌ You already have an active reservation. Please release it first."
+
+    # ✅ STEP 2: Find a free spot in that lot
+    spot = conn.execute('''
+        SELECT * FROM parking_spots
+        WHERE lot_id = ? AND is_occupied = 0
+        LIMIT 1
+    ''', (lot_id,)).fetchone()
+
+    if not spot:
+        conn.close()
+        return "❌ No available spots in this lot."
+
+    # ✅ STEP 3: Reserve the spot
+    now = datetime.datetime.now()
+    conn.execute('''
+        UPDATE parking_spots
+        SET is_occupied = 1, current_user_id = ?
+        WHERE id = ?
+    ''', (user_id, spot['id']))
+
+    # ✅ STEP 4: Add entry in parking history
+    conn.execute('''
+        INSERT INTO parking_history (user_id, spot_id, vehicle_number, entry_time)
+        VALUES (?, ?, ?, ?)
+    ''', (user_id, spot['id'], vehicle_number, now))
+
+    
+    conn.commit()
+    conn.close()
+    print("Checking existing reservation for user:", user_id)
+    print("Active reservation row:", active)
+
+    return redirect(url_for('user_dashboard'))
+
+
+@app.route('/user_history')
+def user_history():
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    history = conn.execute(
+        '''
+        SELECT r.*, p.name AS lot_name, p.address AS lot_address, s.spot_number
+        FROM reservations r 
+        JOIN parking_lots p ON r.lot_id = p.id 
+        JOIN parking_spots s ON r.spot_id = s.id
+        WHERE r.user_id = ? 
+        ORDER BY r.booking_time DESC
+        ''',
+        (session['id'],)
+    ).fetchall()
+    conn.close()
+
+    return render_template('user_history.html', history=history)
+
+@app.route('/delete_lot/<int:lot_id>', methods=['POST'])
+def delete_lot(lot_id):
+    if session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+
+    # Delete spots first due to FK constraints
+    conn.execute('DELETE FROM parking_spots WHERE lot_id = ?', (lot_id,))
+    conn.execute('DELETE FROM parking_lots WHERE id = ?', (lot_id,))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('view_lots'))
+
 @app.route('/logout')
 def logout():
+    user_id = session.get('id')
+
+    conn = get_db_connection()
+    conn.execute('''
+        UPDATE parking_spots
+        SET is_occupied = 0, current_user_id = NULL
+        WHERE current_user_id = ?
+    ''', (user_id,))
+    conn.commit()
+    conn.close()
+
     session.clear()
     return redirect(url_for('home'))
+
 
 # Run app
 if __name__ == '__main__':
