@@ -1,0 +1,29 @@
+<!-- templates/register.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+</head>
+<body>
+    <h2>User Registration</h2>
+    <form method="POST">
+        <label>Email:</label><br>
+        <input type="email" name="email" required><br><br>
+
+        <label>Password:</label><br>
+        <input type="password" name="password" required><br><br>
+
+        <label>Full Name:</label><br>
+        <input type="text" name="full_name" required><br><br>
+
+        <label>Address:</label><br>
+        <input type="text" name="address"><br><br>
+
+        <label>Pin Code:</label><br>
+        <input type="text" name="pin_code"><br><br>
+
+        <input type="submit" value="Register">
+    </form>
+    <p>Already registered? <a href="{{ url_for('login') }}">Login here</a></p>
+</body>
+</html>
