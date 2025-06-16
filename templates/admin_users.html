@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Users</title>
+</head>
+<body>
+    <h2>👤 Registered Users</h2>
+    <table border="1">
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Parking Lot</th>
+            <th>Spot Number</th>
+        </tr>
+        {% for user in user_spots %}
+        <tr>
+            <td>{{ user['full_name'] }}</td>
+            <td>{{ user['email'] }}</td>
+            <td>{{ user['lot_name'] if user['lot_name'] else '—' }}</td>
+            <td>{{ user['spot_number'] if user['spot_number'] else '—' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <a href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
+</body>
+</html>

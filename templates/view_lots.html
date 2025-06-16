@@ -1,0 +1,29 @@
+<!-- templates/view_lots.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>View Parking Lots</title>
+</head>
+<body>
+    <h2>📋 All Parking Lots</h2>
+    <a href="{{ url_for('admin_dashboard') }}">🔙 Back to Dashboard</a>
+    <table border="1" cellpadding="10">
+        <tr>
+            <th>Lot Name</th>
+            <th>Address</th>
+            <th>Total Spots</th>
+            <th>Available Spots</th>
+            <th>Actions</th>
+        </tr>
+        {% for lot in lots %}
+        <tr>
+            <td>{{ lot['name'] }}</td>
+            <td>{{ lot['address'] }}</td>
+            <td>{{ lot['total_spots'] }}</td>
+            <td>{{ lot['available_spots'] }}</td>
+            <td><a href="{{ url_for('view_spots', lot_id=lot['id']) }}">👁️ View Spots</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

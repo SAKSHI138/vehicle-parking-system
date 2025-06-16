@@ -1,0 +1,28 @@
+<!-- templates/create_lot.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Parking Lot</title>
+</head>
+<body>
+    <h2>Create New Parking Lot</h2>
+    <form method="POST">
+        <label>Name:</label><br>
+        <input type="text" name="name" required><br><br>
+
+        <label>Address:</label><br>
+        <input type="text" name="address" required><br><br>
+
+        <label>Pin Code:</label><br>
+        <input type="text" name="pin_code"><br><br>
+
+        <label>Total Spots:</label><br>
+        <input type="number" name="total_spots" min="1" required><br><br>
+
+        <button type="submit">Create Lot</button>
+    </form>
+
+    <br>
+    <a href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
+</body>
+</html>

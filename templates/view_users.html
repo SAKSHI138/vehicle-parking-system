@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Users</title>
+</head>
+<body>
+    <h2>Registered Users and Parking Info</h2>
+
+    <table border="1" cellpadding="6">
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Address</th>
+            <th>Pin Code</th>
+            <th>Current Spot</th>
+            <th>Parking Lot</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.full_name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.address }}</td>
+            <td>{{ user.pin_code }}</td>
+            <td>{{ user.spot_number or '—' }}</td>
+            <td>{{ user.lot_name or '—' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <p><a href="{{ url_for('admin_dashboard') }}">⬅ Back to Dashboard</a></p>
+</body>
+</html>
