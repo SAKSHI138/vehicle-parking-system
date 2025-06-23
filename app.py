@@ -14,11 +14,16 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-@app.template_filter('datetimeformat')
-def datetimeformat(value):
-    if value:
-        return datetime.fromisoformat(value).strftime('%d %b %Y, %I:%M %p')
-    return ''
+@app.template_filter('format_datetime')
+def format_datetime(value):
+    if not value:
+        return ""
+    try:
+        dt = datetime.fromisoformat(value)
+        return dt.strftime("%d %b %Y, %I:%M %p")
+    except:
+        return value
+
 
 
 # Home page
@@ -220,6 +225,7 @@ def admin_reservations():
             h.vehicle_number,
             h.entry_time,
             h.exit_time,
+            h.cost,
             u.full_name AS user_name
         FROM parking_history h
         JOIN parking_spots s ON h.spot_id = s.id
@@ -245,6 +251,7 @@ def admin_reservations():
         converted_history.append(row_dict)
 
     return render_template('admin_reservations.html', history=converted_history)
+
 
 
 @app.route('/admin/view_users')
@@ -393,36 +400,56 @@ def release_spot():
     user_id = session['user']['id']
     conn = get_db_connection()
 
+    # Get the spot being used
     spot = conn.execute('SELECT * FROM parking_spots WHERE current_user_id = ?', (user_id,)).fetchone()
-    if spot:
-        now = datetime.now().isoformat()
 
-        # Update spot
+    if spot:
+        now = datetime.now()
+        now_str = now.isoformat()
+
+        # Get the entry_time from history
+        history = conn.execute('''
+            SELECT ph.id, ph.entry_time, pl.price_per_hour
+            FROM parking_history ph
+            JOIN parking_lots pl ON ph.lot_id = pl.id
+            WHERE ph.user_id = ? AND ph.spot_id = ? AND ph.exit_time IS NULL
+        ''', (user_id, spot['id'])).fetchone()
+
+        if history and history['entry_time']:
+            entry_time = datetime.fromisoformat(history['entry_time'])
+            duration_seconds = (now - entry_time).total_seconds()
+            duration_hours = duration_seconds / 3600
+            cost = round(duration_hours * history['price_per_hour'], 2)
+        else:
+            cost = None
+
+        # Update parking_spots
         conn.execute('''
             UPDATE parking_spots 
             SET is_occupied = 0, current_user_id = NULL 
             WHERE id = ?
         ''', (spot['id'],))
 
-        # Update lot availability
+        # Update parking_lots availability
         conn.execute('''
             UPDATE parking_lots 
             SET available_spots = available_spots + 1 
             WHERE id = ?
         ''', (spot['lot_id'],))
 
-        # Update history
+        # Update history with exit_time and cost
         conn.execute('''
             UPDATE parking_history 
-            SET exit_time = ?
-            WHERE user_id = ? AND spot_id = ? AND exit_time IS NULL
-        ''', (now, user_id, spot['id']))
+            SET exit_time = ?, cost = ?
+            WHERE id = ?
+        ''', (now_str, cost, history['id']))
 
         conn.commit()
-        flash("🔓 Spot released successfully!")
+        flash(f"🔓 Spot released successfully! Parking cost: ₹{cost}" if cost else "🔓 Spot released.")
 
     conn.close()
     return redirect(url_for('user_dashboard'))
+
 
 @app.route('/user_history')
 def user_history():
@@ -517,6 +544,8 @@ def logout():
     conn.close()
     session.clear()
     return redirect(url_for('home'))
+
+
 
 # Run app
 if __name__ == '__main__':
