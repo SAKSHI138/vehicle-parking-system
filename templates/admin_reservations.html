@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Reservation History</title>
+</head>
+<body>
+    <h2>🗂️ Admin – Reservation History</h2>
+    <a href="{{ url_for('admin_dashboard') }}">⬅ Back to Dashboard</a>
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Lot Name</th>
+                <th>Address</th>
+                <th>Spot</th>
+                <th>Vehicle No.</th>
+                <th>Booked At</th>
+                <th>Released At</th>
+                <th>⏱️ Duration</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for entry in history %}
+            <tr>
+                <td>{{ entry.user_name }}</td>
+                <td>{{ entry.lot_name }}</td>
+                <td>{{ entry.lot_address }}</td>
+                <td>{{ entry.spot_number }}</td>
+                <td>{{ entry.vehicle_number }}</td>
+                <td>{{ entry.entry_time | datetimeformat }}</td>
+                <td>
+                    {% if entry.exit_time %}
+                        {{ entry.exit_time | datetimeformat }}
+                    {% else %}
+                        <span style="color: orange;">⏳ In Use</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if entry.duration %}
+                        {{ entry.duration }}
+                    {% else %}
+                        <span style="color: orange;">In Progress</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
