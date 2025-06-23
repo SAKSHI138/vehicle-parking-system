@@ -5,32 +5,48 @@
     <title>My Parking History</title>
 </head>
 <body>
-    <h1>🕒 My Reservation History</h1>
-    {% if history %}
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Booking Time</th>
-                <th>Vehicle Number</th>
-                <th>Lot Name</th>
-                <th>Lot Address</th>
-                <th>Spot Number</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in history %}
-            <tr>
-                <td>{{ row['booking_time'] }}</td>
-                <td>{{ row['vehicle_number'] }}</td>
-                <td>{{ row['lot_name'] }}</td>
-                <td>{{ row['lot_address'] }}</td>
-                <td>{{ row['spot_number'] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No reservations found.</p>
-    {% endif %}
+    <h2>🕒 My Reservation History</h2>
+<table border="1" cellpadding="10" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Lot Name</th>
+            <th>Address</th>
+            <th>Spot</th>
+            <th>Vehicle No.</th>
+            <th>Booked At</th>
+            <th>Released At</th>
+            <th>⏱️ Duration</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in history %}
+        <tr>
+            <td>{{ entry.lot_name }}</td>
+            <td>{{ entry.lot_address }}</td>
+            <td>{{ entry.spot_number }}</td>
+            <td>{{ entry.vehicle_number }}</td>
+            <td>{{ entry.pretty_entry }}</td>
+            <td>
+                {% if entry.pretty_exit %}
+                    {{ entry.pretty_exit }}
+                {% else %}
+                    <span style="color: orange;">⏳ In Use</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if entry.duration %}
+                    {{ entry.duration }}
+                {% else %}
+                    <span style="color: orange;">In Progress</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('user_dashboard') }}">⬅ Back to Dashboard</a>
+    <br>
+    <a href="{{ url_for('logout') }}">🔒 Logout</a>
 </body>
 </html>

@@ -5,7 +5,27 @@
     <title>User Dashboard</title>
 </head>
 <body>
-<h2>Welcome {{ full_name }}</h2>
+    <h2>Welcome {{ full_name }}</h2>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul style="color: green;">
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+        {% endwith %}
+
+
+    {% if current_spot %}
+        <p style="color: green;">
+            ✅ You have already reserved Spot {{ current_spot.spot_number }} at {{ current_lot.name }}
+        </p>
+        <form method="POST" action="{{ url_for('release_spot') }}">
+            <button type="submit">🔓 Release My Spot</button>
+        </form>
+    {% endif %}
 
     <h3>Available Parking Lots</h3>
 
@@ -13,18 +33,28 @@
         <div>
             <strong>{{ lot.name }} – {{ lot.address }}</strong><br>
             Total: {{ lot.total_spots }}, Available: {{ lot.available_spots }}
-            {% if lot.available_spots > 0 %}
-                <form action="{{ url_for('reserve', lot_id=lot.id) }}" method="post" style="display:inline;">
-                    <button type="submit">🚗 Reserve Spot</button>
-                </form>
+
+            {% if current_spot %}
+                {% if lot.id == current_lot.id %}
+                    <p style="color: green;">✅ You have already reserved a spot in this lot.</p>
+                {% else %}
+                    <span style="color: gray;">🔒 You already have a spot in another lot.</span>
+                {% endif %}
             {% else %}
-                <span style="color: gray;">❌ No Spots Available</span>
+                {% if lot.available_spots > 0 %}
+                    <form action="{{ url_for('reserve', lot_id=lot.id) }}" method="post" style="display:inline;">
+                        <button type="submit">🚗 Reserve Spot</button>
+                    </form>
+                {% else %}
+                    <span style="color: gray;">❌ No Spots Available</span>
+                {% endif %}
             {% endif %}
         </div>
         <hr>
     {% endfor %}
 
     <p>
+        <a href="{{ url_for('view_lots') }}">📋 View All Parking Lots</a> |
         <a href="{{ url_for('user_history') }}">🕓 View Parking History</a> |
         <a href="{{ url_for('logout') }}">🚪 Logout</a>
     </p>

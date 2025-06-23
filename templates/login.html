@@ -6,6 +6,16 @@
 </head>
 <body>
     <h2>Login</h2>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul style="color: red;">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    {% endwith %}
+
     {% if error %}
         <p style="color:red">{{ error }}</p>
     {% endif %}

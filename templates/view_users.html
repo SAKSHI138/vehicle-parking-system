@@ -16,15 +16,14 @@
             <th>Parking Lot</th>
         </tr>
         {% for user in users %}
-        <tr>
-            <td>{{ user.full_name }}</td>
-            <td>{{ user.email }}</td>
-            <td>{{ user.address }}</td>
-            <td>{{ user.pin_code }}</td>
-            <td>{{ user.spot_number or '—' }}</td>
-            <td>{{ user.lot_name or '—' }}</td>
-        </tr>
-        {% endfor %}
+  <tr>
+    <td>{{ user.full_name }}</td>
+    <td>{{ user.email }}</td>
+    <td>{{ user.spot_number or 'No Spot Assigned' }}</td>
+    <td>{{ user.lot_name or 'N/A' }}</td>
+  </tr>
+{% endfor %}
+
     </table>
 
     <p><a href="{{ url_for('admin_dashboard') }}">⬅ Back to Dashboard</a></p>
