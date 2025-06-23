@@ -1,19 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Dashboard</title>
-</head>
-<body>
-    <h1>Welcome Admin, {{ 'full_name' }}!</h1>
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
 
-    <ul>
-        <li><a href="{{ url_for('create_lot') }}">➕ Create Parking Lot</a></li>
-        <li><a href="{{ url_for('view_lots') }}">📋 View All Parking Lots</a></li>
-        <li><a href="{{ url_for('add_lot') }}">➕ Add New Lot</a></li>
-        <li><a href="{{ url_for('view_users') }}" class="btn btn-primary">👥 View All Users</a></li>
-        <li><a href="{{ url_for('logout') }}">🚪 Logout</a></li>
-        <li><a href="{{ url_for('admin_reservations') }}">📜 View All Reservations</a></li>
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">👋 Welcome Admin, {{ full_name }}!</h2>
 
-    </ul>
-</body>
-</html>
+  <div class="list-group">
+    <a href="{{ url_for('create_lot') }}" class="list-group-item list-group-item-action">➕ Create Parking Lot</a>
+    <a href="{{ url_for('view_lots') }}" class="list-group-item list-group-item-action">📋 View All Parking Lots</a>
+    <a href="{{ url_for('add_lot') }}" class="list-group-item list-group-item-action">➕ Add New Lot</a>
+    <a href="{{ url_for('view_users') }}" class="list-group-item list-group-item-action">👥 View All Users</a>
+    <a href="{{ url_for('admin_reservations') }}" class="list-group-item list-group-item-action">📜 View All Reservations</a>
+    <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger">🚪 Logout</a>
+  </div>
+</div>
+{% endblock %}

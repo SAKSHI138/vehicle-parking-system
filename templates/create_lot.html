@@ -1,28 +1,35 @@
-<!-- templates/create_lot.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Create Parking Lot</title>
-</head>
-<body>
-    <h2>Create New Parking Lot</h2>
-    <form method="POST">
-        <label>Name:</label><br>
-        <input type="text" name="name" required><br><br>
+{% extends "base.html" %}
+{% block title %}Create Parking Lot{% endblock %}
 
-        <label>Address:</label><br>
-        <input type="text" name="address" required><br><br>
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">➕ Create New Parking Lot</h2>
 
-        <label>Pin Code:</label><br>
-        <input type="text" name="pin_code"><br><br>
+  <form method="POST" class="row g-3">
+    <div class="col-md-6">
+      <label for="name" class="form-label">Lot Name</label>
+      <input type="text" class="form-control" id="name" name="name" required>
+    </div>
 
-        <label>Total Spots:</label><br>
-        <input type="number" name="total_spots" min="1" required><br><br>
+    <div class="col-md-6">
+      <label for="address" class="form-label">Address</label>
+      <input type="text" class="form-control" id="address" name="address" required>
+    </div>
 
-        <button type="submit">Create Lot</button>
-    </form>
+    <div class="col-md-4">
+      <label for="pin_code" class="form-label">Pin Code</label>
+      <input type="text" class="form-control" id="pin_code" name="pin_code">
+    </div>
 
-    <br>
-    <a href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
-</body>
-</html>
+    <div class="col-md-4">
+      <label for="total_spots" class="form-label">Total Spots</label>
+      <input type="number" class="form-control" id="total_spots" name="total_spots" min="1" required>
+    </div>
+
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary">🚧 Create Lot</button>
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary ms-2">← Back to Dashboard</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

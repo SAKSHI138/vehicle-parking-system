@@ -1,62 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>User Dashboard</title>
-</head>
-<body>
-    <h2>Welcome {{ full_name }}</h2>
+{% extends "base.html" %}
+{% block title %}User Dashboard{% endblock %}
 
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul style="color: green;">
-            {% for message in messages %}
-            <li>{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-        {% endwith %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-3">👋 Welcome {{ full_name }}</h2>
 
-
-    {% if current_spot %}
-        <p style="color: green;">
-            ✅ You have already reserved Spot {{ current_spot.spot_number }} at {{ current_lot.name }}
-        </p>
-        <form method="POST" action="{{ url_for('release_spot') }}">
-            <button type="submit">🔓 Release My Spot</button>
-        </form>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="alert alert-success">
+        {% for message in messages %}
+          <div>{{ message }}</div>
+        {% endfor %}
+      </div>
     {% endif %}
+  {% endwith %}
 
-    <h3>Available Parking Lots</h3>
+  {% if current_spot %}
+    <div class="alert alert-success">
+      ✅ You have already reserved <strong>Spot {{ current_spot.spot_number }}</strong> at <strong>{{ current_lot.name }}</strong>
+    </div>
+    <form method="POST" action="{{ url_for('release_spot') }}">
+      <button class="btn btn-danger mb-4" type="submit">🔓 Release My Spot</button>
+    </form>
+  {% endif %}
 
-    {% for lot in lots %}
-        <div>
-            <strong>{{ lot.name }} – {{ lot.address }}</strong><br>
-            Total: {{ lot.total_spots }}, Available: {{ lot.available_spots }}
+  <h4 class="mb-3">Available Parking Lots</h4>
 
-            {% if current_spot %}
-                {% if lot.id == current_lot.id %}
-                    <p style="color: green;">✅ You have already reserved a spot in this lot.</p>
-                {% else %}
-                    <span style="color: gray;">🔒 You already have a spot in another lot.</span>
-                {% endif %}
-            {% else %}
-                {% if lot.available_spots > 0 %}
-                    <form action="{{ url_for('reserve', lot_id=lot.id) }}" method="post" style="display:inline;">
-                        <button type="submit">🚗 Reserve Spot</button>
-                    </form>
-                {% else %}
-                    <span style="color: gray;">❌ No Spots Available</span>
-                {% endif %}
-            {% endif %}
-        </div>
-        <hr>
-    {% endfor %}
+  {% for lot in lots %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">{{ lot.name }} – {{ lot.address }}</h5>
+        <p>Total: {{ lot.total_spots }}, Available: {{ lot.available_spots }}</p>
 
-    <p>
-        <a href="{{ url_for('view_lots') }}">📋 View All Parking Lots</a> |
-        <a href="{{ url_for('user_history') }}">🕓 View Parking History</a> |
-        <a href="{{ url_for('logout') }}">🚪 Logout</a>
-    </p>
-</body>
-</html>
+        {% if current_spot %}
+          {% if lot.id == current_lot.id %}
+            <span class="badge bg-success">✅ You have a reservation in this lot</span>
+          {% else %}
+            <span class="badge bg-secondary">🔒 You already have a spot in another lot</span>
+          {% endif %}
+        {% else %}
+          {% if lot.available_spots > 0 %}
+            <form action="{{ url_for('reserve', lot_id=lot.id) }}" method="post" class="d-inline">
+              <button class="btn btn-primary">🚗 Reserve Spot</button>
+            </form>
+          {% else %}
+            <span class="text-danger">❌ No Spots Available</span>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+
+  <div class="mt-4">
+    <a href="{{ url_for('view_lots') }}" class="btn btn-outline-primary me-2">📋 View All Parking Lots</a>
+    <a href="{{ url_for('user_history') }}" class="btn btn-outline-info me-2">🕓 View Parking History</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">🚪 Logout</a>
+  </div>
+</div>
+{% endblock %}

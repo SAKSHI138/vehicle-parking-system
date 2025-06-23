@@ -1,25 +1,36 @@
-<!-- templates/view_spots.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>View Spots in {{ lot['name'] }}</title>
-</head>
-<body>
-    <h2>🅿️ Spots in Lot: {{ lot['name'] }}</h2>
-    <a href="{{ url_for('view_lots') }}">🔙 Back to Lots</a>
-    <table border="1" cellpadding="10">
+{% extends "base.html" %}
+{% block title %}View Spots in {{ lot['name'] }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">🅿️ Spots in Lot: {{ lot['name'] }}</h2>
+  <a href="{{ url_for('view_lots') }}" class="btn btn-outline-secondary mb-3">🔙 Back to Lots</a>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-dark">
         <tr>
-            <th>Spot Number</th>
-            <th>Occupied?</th>
-            <th>User</th>
+          <th>Spot Number</th>
+          <th>Occupied?</th>
+          <th>User</th>
         </tr>
+      </thead>
+      <tbody>
         {% for spot in spots %}
         <tr>
-            <td>{{ spot['spot_number'] }}</td>
-            <td>{{ 'Yes' if spot['is_occupied'] else 'No' }}</td>
-            <td>{{ spot['user_email'] if spot['user_email'] else '---' }}</td>
+          <td>{{ spot['spot_number'] }}</td>
+          <td>
+            {% if spot['is_occupied'] %}
+              <span class="badge bg-danger">Yes</span>
+            {% else %}
+              <span class="badge bg-success">No</span>
+            {% endif %}
+          </td>
+          <td>{{ spot['user_email'] if spot['user_email'] else '---' }}</td>
         </tr>
         {% endfor %}
+      </tbody>
     </table>
-</body>
-</html>
+  </div>
+</div>
+{% endblock %}

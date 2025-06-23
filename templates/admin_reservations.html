@@ -1,95 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Admin – Reservation History</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
+{% extends "base.html" %}
+{% block title %}Admin – Reservation History{% endblock %}
 
-        h2 {
-            color: #333;
-        }
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">📊 Admin – Reservation History</h2>
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: center;
-        }
-
-        th {
-            background-color: #f5f5f5;
-        }
-
-        .in-use {
-            color: orange;
-        }
-
-        .currency {
-            font-weight: bold;
-            color: green;
-        }
-    </style>
-</head>
-<body>
-
-    <h2>📊 Admin – Reservation History</h2>
-
-    <table>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-dark text-center">
         <tr>
-            <th>User</th>
-            <th>Lot Name</th>
-            <th>Address</th>
-            <th>Spot</th>
-            <th>Vehicle No.</th>
-            <th>Booked At</th>
-            <th>Released At</th>
-            <th>⏱️ Duration</th>
-            <th>💰 Cost</th>
+          <th>User</th>
+          <th>Lot Name</th>
+          <th>Address</th>
+          <th>Spot</th>
+          <th>Vehicle No.</th>
+          <th>Booked At</th>
+          <th>Released At</th>
+          <th>⏱️ Duration</th>
+          <th>💰 Cost</th>
         </tr>
-
+      </thead>
+      <tbody>
         {% for entry in history %}
-        <tr>
-            <td>{{ entry.user_name }}</td>
-            <td>{{ entry.lot_name }}</td>
-            <td>{{ entry.lot_address }}</td>
-            <td>{{ entry.spot_number }}</td>
-            <td>{{ entry.vehicle_number }}</td>
-            <td>{{ entry.entry_time | format_datetime }}</td>
-            <td>
-                {% if entry.exit_time %}
-                    {{ entry.exit_time | format_datetime }}
-                {% else %}
-                    <span class="in-use">⏳ In Use</span>
-                {% endif %}
-            </td>
-            <td>
-                {% if entry.duration %}
-                    {{ entry.duration }}
-                {% else %}
-                    <span class="in-use">In Progress</span>
-                {% endif %}
-            </td>
-            <td>
-                {% if entry.cost %}
-                    <span class="currency">₹{{ "%.2f"|format(entry.cost) }}</span>
-                {% else %}
-                    <span class="in-use">Pending</span>
-                {% endif %}
-            </td>
+        <tr class="text-center">
+          <td>{{ entry.user_name }}</td>
+          <td>{{ entry.lot_name }}</td>
+          <td>{{ entry.lot_address }}</td>
+          <td>{{ entry.spot_number }}</td>
+          <td>{{ entry.vehicle_number }}</td>
+          <td>{{ entry.entry_time | format_datetime }}</td>
+          <td>
+            {% if entry.exit_time %}
+              {{ entry.exit_time | format_datetime }}
+            {% else %}
+              <span class="text-warning">⏳ In Use</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if entry.duration %}
+              {{ entry.duration }}
+            {% else %}
+              <span class="text-warning">In Progress</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if entry.cost %}
+              <span class="text-success fw-bold">₹{{ "%.2f"|format(entry.cost) }}</span>
+            {% else %}
+              <span class="text-muted">Pending</span>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
+      </tbody>
     </table>
+  </div>
 
-    <p><a href="{{ url_for('admin_dashboard') }}">⬅ Back to Dashboard</a></p>
-
-</body>
-</html>
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary mt-3">⬅ Back to Dashboard</a>
+</div>
+{% endblock %}

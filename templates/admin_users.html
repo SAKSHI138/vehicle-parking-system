@@ -1,28 +1,33 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>All Users</title>
-</head>
-<body>
-    <h2>👤 Registered Users</h2>
-    <table border="1">
+{% extends "base.html" %}
+{% block title %}All Users{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">👤 Registered Users</h2>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-dark">
         <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Parking Lot</th>
-            <th>Spot Number</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Parking Lot</th>
+          <th>Spot Number</th>
         </tr>
+      </thead>
+      <tbody>
         {% for user in user_spots %}
         <tr>
-            <td>{{ user['full_name'] }}</td>
-            <td>{{ user['email'] }}</td>
-            <td>{{ user['lot_name'] if user['lot_name'] else '—' }}</td>
-            <td>{{ user['spot_number'] if user['spot_number'] else '—' }}</td>
+          <td>{{ user['full_name'] }}</td>
+          <td>{{ user['email'] }}</td>
+          <td>{{ user['lot_name'] if user['lot_name'] else '—' }}</td>
+          <td>{{ user['spot_number'] if user['spot_number'] else '—' }}</td>
         </tr>
         {% endfor %}
+      </tbody>
     </table>
+  </div>
 
-    <br>
-    <a href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
-</body>
-</html>
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary mt-3">← Back to Dashboard</a>
+</div>
+{% endblock %}

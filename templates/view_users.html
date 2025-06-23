@@ -1,31 +1,33 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>All Users</title>
-</head>
-<body>
-    <h2>Registered Users and Parking Info</h2>
+{% extends "base.html" %}
+{% block title %}All Users – Parking Info{% endblock %}
 
-    <table border="1" cellpadding="6">
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">👥 Registered Users and Parking Info</h2>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-dark">
         <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Address</th>
-            <th>Pin Code</th>
-            <th>Current Spot</th>
-            <th>Parking Lot</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Spot Number</th>
+          <th>Parking Lot</th>
         </tr>
+      </thead>
+      <tbody>
         {% for user in users %}
-  <tr>
-    <td>{{ user.full_name }}</td>
-    <td>{{ user.email }}</td>
-    <td>{{ user.spot_number or 'No Spot Assigned' }}</td>
-    <td>{{ user.lot_name or 'N/A' }}</td>
-  </tr>
-{% endfor %}
-
+        <tr>
+          <td>{{ user.full_name }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.spot_number or 'No Spot Assigned' }}</td>
+          <td>{{ user.lot_name or 'N/A' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
 
-    <p><a href="{{ url_for('admin_dashboard') }}">⬅ Back to Dashboard</a></p>
-</body>
-</html>
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary mt-3">⬅ Back to Dashboard</a>
+</div>
+{% endblock %}
