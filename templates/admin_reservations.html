@@ -2,60 +2,55 @@
 {% block title %}Admin – Reservation History{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container mt-4">
   <h2 class="mb-4">📊 Admin – Reservation History</h2>
 
-  <div class="table-responsive">
-    <table class="table table-bordered table-hover align-middle">
-      <thead class="table-dark text-center">
-        <tr>
-          <th>User</th>
-          <th>Lot Name</th>
-          <th>Address</th>
-          <th>Spot</th>
-          <th>Vehicle No.</th>
-          <th>Booked At</th>
-          <th>Released At</th>
-          <th>⏱️ Duration</th>
-          <th>💰 Cost</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for entry in history %}
-        <tr class="text-center">
-          <td>{{ entry.user_name }}</td>
-          <td>{{ entry.lot_name }}</td>
-          <td>{{ entry.lot_address }}</td>
-          <td>{{ entry.spot_number }}</td>
-          <td>{{ entry.vehicle_number }}</td>
-          <td>{{ entry.entry_time | format_datetime }}</td>
-          <td>
+  <div class="row row-cols-1 row-cols-md-2 g-4">
+    {% for entry in history %}
+    <div class="col">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">{{ entry.user_name }}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">{{ entry.lot_name }} – {{ entry.lot_address }}</h6>
+
+          <p class="mb-1"><strong>Spot:</strong> {{ entry.spot_number }}</p>
+          <p class="mb-1"><strong>Vehicle No.:</strong> {{ entry.vehicle_number }}</p>
+          <p class="mb-1"><strong>Booked At:</strong> {{ entry.entry_time | format_datetime }}</p>
+
+          <p class="mb-1">
+            <strong>Released At:</strong>
             {% if entry.exit_time %}
               {{ entry.exit_time | format_datetime }}
             {% else %}
-              <span class="text-warning">⏳ In Use</span>
+              <span class="badge text-bg-warning">⏳ In Use</span>
             {% endif %}
-          </td>
-          <td>
+          </p>
+
+          <p class="mb-1">
+            <strong>Duration:</strong>
             {% if entry.duration %}
               {{ entry.duration }}
             {% else %}
               <span class="text-warning">In Progress</span>
             {% endif %}
-          </td>
-          <td>
-            {% if entry.cost %}
-              <span class="text-success fw-bold">₹{{ "%.2f"|format(entry.cost) }}</span>
+          </p>
+
+          <p class="mb-0">
+            <strong>Cost:</strong>
+            {% if entry.cost is not none %}
+              <span class="text-success">₹{{ "%.2f"|format(entry.cost) }}</span>
             {% else %}
               <span class="text-muted">Pending</span>
             {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
   </div>
 
-  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary mt-3">⬅ Back to Dashboard</a>
+  <div class="mt-4">
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">⬅ Back to Dashboard</a>
+  </div>
 </div>
 {% endblock %}

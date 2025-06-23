@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Manage Vehicles{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">🚗 Registered Vehicle Numbers</h2>
+
+  <form method="get" class="row g-2 mb-3">
+    <div class="col-md-6">
+      <input type="text" name="search" value="{{ search }}" placeholder="Search by name, email or vehicle no." class="form-control">
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary w-100">🔍 Search</button>
+    </div>
+    <div class="col-md-2">
+      <a href="{{ url_for('admin_vehicles') }}" class="btn btn-secondary w-100">🔄 Reset</a>
+    </div>
+  </form>
+
+  {% if vehicles %}
+  <table class="table table-bordered table-hover">
+    <thead class="table-light">
+      <tr>
+        <th>User Name</th>
+        <th>Email</th>
+        <th>Vehicle Number</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in vehicles %}
+      <tr>
+        <td>{{ v.full_name }}</td>
+        <td>{{ v.email }}</td>
+        <td>{{ v.vehicle_number }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="alert alert-info">No vehicles found matching your search.</div>
+  {% endif %}
+
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mt-3">⬅ Back to Dashboard</a>
+</div>
+{% endblock %}

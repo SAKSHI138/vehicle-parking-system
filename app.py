@@ -1,12 +1,25 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, get_flashed_messages
 import sqlite3
 import os
-from datetime import datetime
+from datetime import datetime,timedelta
 import random
+from werkzeug.security import generate_password_hash
+from flask_babel import Babel, _
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for sessions
 DATABASE = 'parking.db'
+# Example: global setting
+MAX_DURATION_MINUTES = 1  # 2 hours
+
+app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'hi']  # Add more as needed
+
+babel = Babel(app)
+
+@babel.localeselector
+def get_locale():
+    return request.accept_languages.best_match(app.config['BABEL_SUPPORTED_LOCALES'])
 
 # Helper function to get DB connection
 def get_db_connection():
@@ -55,6 +68,40 @@ def register():
 
     return render_template('register.html')
 
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    user = conn.execute('SELECT * FROM users WHERE id = ?', (session['id'],)).fetchone()
+
+    if request.method == 'POST':
+        full_name = request.form['full_name']
+        address = request.form['address']
+        pin_code = request.form['pin_code']
+        new_password = request.form.get('password')
+
+        if new_password:
+            hashed = generate_password_hash(new_password)
+            conn.execute('UPDATE users SET full_name = ?, address = ?, pin_code = ?, password = ? WHERE id = ?',
+                         (full_name, address, pin_code, hashed, session['id']))
+        else:
+            conn.execute('UPDATE users SET full_name = ?, address = ?, pin_code = ? WHERE id = ?',
+                         (full_name, address, pin_code, session['id']))
+        conn.commit()
+        flash('Profile updated successfully.', 'success')
+        return redirect(url_for('profile'))
+
+    # Get distinct vehicle numbers from history
+    vehicles = conn.execute(
+        'SELECT DISTINCT vehicle_number FROM parking_history WHERE user_id = ?',
+        (session['id'],)
+    ).fetchall()
+    conn.close()
+
+    return render_template('profile.html', user=user, vehicles=vehicles)
+
 # Login route for both user and admin
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -88,21 +135,63 @@ def login():
             return render_template('login.html', error='❌ Invalid credentials')
 
     # ✅ Always return something here (for GET request)
-    flash("❌ Invalid credentials, please try again.")
     return render_template('login.html')
 
 
 # Admin Dashboard (restricted)
 @app.route('/admin_dashboard')
 def admin_dashboard():
-    if 'id' not in session or session.get('role') != 'admin':
+    if 'role' not in session or session['role'] != 'admin':
         return redirect(url_for('login'))
 
     conn = get_db_connection()
+
+    # Summary stats
+    total_lots = conn.execute('SELECT COUNT(*) FROM parking_lots').fetchone()[0]
+    total_spots = conn.execute('SELECT COUNT(*) FROM parking_spots').fetchone()[0]
+    active_reservations = conn.execute('SELECT COUNT(*) FROM parking_history WHERE exit_time IS NULL').fetchone()[0]
+    total_users = conn.execute('SELECT COUNT(*) FROM users WHERE role = "user"').fetchone()[0]
+
     lots = conn.execute('SELECT * FROM parking_lots').fetchall()
+
+    # 🔔 Time-Based Overdue Alert Logic
+    max_duration = timedelta(minutes=1)  # You can change this to any threshold
+    now = datetime.now()
+
+    overdue = conn.execute('''
+        SELECT r.vehicle_number, r.entry_time, u.full_name, l.name AS lot_name
+        FROM parking_history r
+        JOIN users u ON r.user_id = u.id
+        JOIN parking_lots l ON r.lot_id = l.id
+        WHERE r.exit_time IS NULL
+    ''').fetchall()
+
+    alerts = []
+    for row in overdue:
+        entry_time = datetime.fromisoformat(row['entry_time'])
+        duration = now - entry_time
+        if duration > max_duration:
+            alerts.append({
+                'vehicle': row['vehicle_number'],
+                'user': row['full_name'],
+                'lot': row['lot_name'],
+                'entry_time': entry_time.strftime('%d %b %Y, %I:%M %p'),
+                'duration': str(duration).split('.')[0]  # trim microseconds
+            })
+
     conn.close()
 
-    return render_template('admin_dashboard.html', lots=lots, full_name=session.get('full_name'))
+    return render_template(
+        'admin_dashboard.html',
+        full_name=session.get('full_name'),
+        total_lots=total_lots,
+        total_spots=total_spots,
+        active_reservations=active_reservations,
+        total_users=total_users,
+        lots=lots,
+        alerts=alerts  # pass to template
+    )
+
 
 @app.route('/create_lot', methods=['GET', 'POST'])
 def create_lot():
@@ -137,14 +226,6 @@ def create_lot():
         return redirect(url_for('admin_dashboard'))
 
     return render_template('create_lot.html')
-
-
-@app.route('/view_lots')
-def view_lots():
-    conn = get_db_connection()
-    lots = conn.execute('SELECT * FROM parking_lots').fetchall()
-    conn.close()
-    return render_template('view_lots.html', lots=lots)
 
 
 @app.route('/view_spots/<int:lot_id>')
@@ -283,20 +364,28 @@ def user_dashboard():
     lots = [dict(row) for row in conn.execute('SELECT * FROM parking_lots').fetchall()]
     spot_row = conn.execute('SELECT * FROM parking_spots WHERE current_user_id = ?', (user_id,)).fetchone()
     spot = dict(spot_row) if spot_row else None
-
+    
     current_lot = None
     if spot:
         lot_row = conn.execute('SELECT * FROM parking_lots WHERE id = ?', (spot['lot_id'],)).fetchone()
         current_lot = dict(lot_row) if lot_row else None
 
     full_name = conn.execute('SELECT full_name FROM users WHERE id = ?', (user_id,)).fetchone()['full_name']
+    vehicle_numbers = conn.execute(
+    'SELECT DISTINCT vehicle_number FROM parking_history WHERE user_id = ?',
+    (session['id'],)
+    ).fetchall()
+
     conn.close()
+    # print("Session:", session)
 
     return render_template('user_dashboard.html',
                            full_name=full_name,
                            lots=lots,
                            current_spot=spot,
-                           current_lot=current_lot)
+                           current_lot=current_lot ,
+                            vehicle_numbers=[row['vehicle_number'] for row in vehicle_numbers]
+)
 
 
 
@@ -333,7 +422,7 @@ def reserve(lot_id):
         return redirect(url_for('login'))  # 👈 This is the part sending you to login
 
     user_id = session['user']['id']
-    vehicle_number = f"AUTO-{random.randint(1000, 9999)}"
+    vehicle_number = request.form.get("vehicle_number_manual") or request.form.get("vehicle_number")
 
     conn = get_db_connection()
 
@@ -459,7 +548,7 @@ def user_history():
     conn = get_db_connection()
     raw_history = conn.execute(
         '''
-        SELECT r.*, l.name AS lot_name, l.address AS lot_address, s.spot_number
+        SELECT r.*, r.vehicle_number, l.name AS lot_name, l.address AS lot_address, s.spot_number
         FROM parking_history r
         JOIN parking_spots s ON r.spot_id = s.id
         JOIN parking_lots l ON r.lot_id = l.id
@@ -491,19 +580,79 @@ def user_history():
 
     return render_template('user_history.html', history=history)
 
-@app.route('/delete_lot/<int:lot_id>', methods=['POST'])
-def delete_lot(lot_id):
-    print("Session role:", session.get('role'))  # 👈 debug
-    if session.get('role') != 'admin':
-        print("Access denied. Redirecting to login.")
+@app.route('/admin/lots')
+def view_lots():
+    if 'role' not in session or session['role'] != 'admin':
         return redirect(url_for('login'))
 
     conn = get_db_connection()
+    lots = conn.execute('SELECT * FROM parking_lots').fetchall()
+    conn.close()
+    return render_template('view_lots.html', lots=lots)
+
+@app.route('/admin/lot/delete/<int:lot_id>', methods=['POST'])
+def delete_lot(lot_id):
+    if 'role' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+
+    # Count reservations using this lot via joined spot IDs
+    active = conn.execute('''
+        SELECT COUNT(*) FROM reservations r
+        JOIN parking_spots s ON r.spot_id = s.id
+        WHERE s.lot_id = ?
+    ''', (lot_id,)).fetchone()[0]
+
+    # Check history table (this has lot_id directly)
+    history = conn.execute(
+        'SELECT COUNT(*) FROM parking_history WHERE lot_id = ?', (lot_id,)
+    ).fetchone()[0]
+
+    if active > 0 or history > 0:
+        conn.close()
+        flash('❌ Cannot delete: This lot has active or past reservations.', 'danger')
+        return redirect(url_for('view_lots'))
+
     conn.execute('DELETE FROM parking_lots WHERE id = ?', (lot_id,))
     conn.commit()
     conn.close()
-    print(f"Lot {lot_id} deleted successfully.")
+
+    flash('✅ Parking lot deleted successfully.', 'success')
     return redirect(url_for('view_lots'))
+
+
+@app.route('/admin/vehicles')
+def admin_vehicles():
+    if 'role' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+
+    search = request.args.get('search', '').strip()
+
+    conn = get_db_connection()
+    if search:
+        query = '''
+            SELECT u.full_name, u.email, ph.vehicle_number
+            FROM parking_history ph
+            JOIN users u ON ph.user_id = u.id
+            WHERE u.full_name LIKE ? OR u.email LIKE ? OR ph.vehicle_number LIKE ?
+            GROUP BY u.id, ph.vehicle_number
+            ORDER BY u.full_name
+        '''
+        like_search = f'%{search}%'
+        vehicles = conn.execute(query, (like_search, like_search, like_search)).fetchall()
+    else:
+        vehicles = conn.execute('''
+            SELECT u.full_name, u.email, ph.vehicle_number
+            FROM parking_history ph
+            JOIN users u ON ph.user_id = u.id
+            GROUP BY u.id, ph.vehicle_number
+            ORDER BY u.full_name
+        ''').fetchall()
+
+    conn.close()
+    return render_template('admin_vehicles.html', vehicles=vehicles, search=search)
+
 
 @app.route('/logout')
 def logout():
@@ -544,6 +693,51 @@ def logout():
     conn.close()
     session.clear()
     return redirect(url_for('home'))
+
+@app.route('/admin/analytics')
+def admin_analytics():
+    if 'role' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+
+    # 1. Most Used Lots
+    most_used = conn.execute('''
+        SELECT l.name, COUNT(r.id) as total
+        FROM parking_history r
+        JOIN parking_lots l ON r.lot_id = l.id
+        GROUP BY l.id
+        ORDER BY total DESC
+    ''').fetchall()
+
+    # 2. Total Revenue Over Time (monthly)
+    revenue_over_time = conn.execute('''
+        SELECT strftime('%Y-%m', entry_time) AS month, SUM(cost) as revenue
+        FROM parking_history
+        WHERE cost IS NOT NULL
+        GROUP BY month
+        ORDER BY month
+    ''').fetchall()
+
+    # 3. Average Parking Duration
+    avg_duration = conn.execute('''
+        SELECT l.name, AVG(
+            julianday(exit_time) - julianday(entry_time)
+        ) * 24 as avg_hours
+        FROM parking_history r
+        JOIN parking_lots l ON r.lot_id = l.id
+        WHERE exit_time IS NOT NULL
+        GROUP BY l.id
+    ''').fetchall()
+
+    conn.close()
+
+    return render_template(
+        'admin_analytics.html',
+        most_used=most_used,
+        revenue_over_time=revenue_over_time,
+        avg_duration=avg_duration,
+    )
 
 
 

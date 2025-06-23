@@ -1,12 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Welcome{% endblock %}
+{% block title %}Welcome - Vehicle Parking System{% endblock %}
 
 {% block content %}
-<div class="text-center">
-  <h1 class="mb-4">🚗 Welcome to the Vehicle Parking System</h1>
-  <p>
-    <a href="{{ url_for('login') }}" class="btn btn-primary me-2">Login</a>
-    <a href="{{ url_for('register') }}" class="btn btn-outline-secondary">Register</a>
-  </p>
+<div class="text-center my-5">
+  <h1 class="display-5 mb-4">🚗 Welcome to the Vehicle Parking System</h1>
+  <p class="lead">Book your parking spot with ease and convenience.</p>
+  <div class="mt-4">
+    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg me-2">🔐 Login</a>
+    <a href="{{ url_for('register') }}" class="btn btn-outline-secondary btn-lg">📝 Register</a>
+  </div>
 </div>
 {% endblock %}

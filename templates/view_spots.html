@@ -1,36 +1,31 @@
 {% extends "base.html" %}
-{% block title %}View Spots in {{ lot['name'] }}{% endblock %}
-
+{% block title %}Spots in {{ lot.name }}{% endblock %}
 {% block content %}
-<div class="container">
-  <h2 class="mb-4">🅿️ Spots in Lot: {{ lot['name'] }}</h2>
-  <a href="{{ url_for('view_lots') }}" class="btn btn-outline-secondary mb-3">🔙 Back to Lots</a>
+<h2 class="mb-4">🅿️ Spots in Lot: {{ lot.name }}</h2>
 
-  <div class="table-responsive">
-    <table class="table table-bordered table-hover align-middle">
-      <thead class="table-dark">
-        <tr>
-          <th>Spot Number</th>
-          <th>Occupied?</th>
-          <th>User</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for spot in spots %}
-        <tr>
-          <td>{{ spot['spot_number'] }}</td>
-          <td>
-            {% if spot['is_occupied'] %}
-              <span class="badge bg-danger">Yes</span>
-            {% else %}
-              <span class="badge bg-success">No</span>
-            {% endif %}
-          </td>
-          <td>{{ spot['user_email'] if spot['user_email'] else '---' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+  {% for spot in spots %}
+  <div class="col">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5 class="card-title">Spot #{{ spot.spot_number }}</h5>
+        <p class="card-text">
+          <span class="badge {% if spot.is_occupied %}bg-danger{% else %}bg-success{% endif %}">
+            {% if spot.is_occupied %}Occupied{% else %}Available{% endif %}
+          </span>
+        </p>
+        <p class="text-muted">
+          {% if spot.user_email %}
+          Reserved by: <strong>{{ spot.user_email }}</strong>
+          {% else %}
+          Not Assigned
+          {% endif %}
+        </p>
+      </div>
+    </div>
   </div>
+  {% endfor %}
 </div>
+
+<a href="{{ url_for('view_lots') }}" class="btn btn-secondary mt-4">⬅ Back to Lots</a>
 {% endblock %}

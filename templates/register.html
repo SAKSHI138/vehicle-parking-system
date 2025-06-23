@@ -2,47 +2,41 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6 col-lg-5">
-    <div class="card shadow p-4">
-      <h2 class="mb-4 text-center">User Registration</h2>
+<div class="container mt-4">
+  <h2 class="mb-4">📝 User Registration</h2>
+  <form method="POST" class="row g-3">
 
-      <form method="POST">
-        <div class="mb-3">
-          <label for="email" class="form-label">Email:</label>
-          <input type="email" name="email" class="form-control" required>
-        </div>
-
-        <div class="mb-3">
-          <label for="password" class="form-label">Password:</label>
-          <input type="password" name="password" class="form-control" required>
-        </div>
-
-        <div class="mb-3">
-          <label for="full_name" class="form-label">Full Name:</label>
-          <input type="text" name="full_name" class="form-control" required>
-        </div>
-
-        <div class="mb-3">
-          <label for="address" class="form-label">Address:</label>
-          <input type="text" name="address" class="form-control">
-        </div>
-
-        <div class="mb-3">
-          <label for="pin_code" class="form-label">Pin Code:</label>
-          <input type="text" name="pin_code" class="form-control">
-        </div>
-
-        <div class="d-grid">
-          <button type="submit" class="btn btn-success">Register</button>
-        </div>
-      </form>
-
-      <p class="mt-3 text-center">
-        Already registered?
-        <a href="{{ url_for('login') }}">Login here</a>
-      </p>
+    <div class="col-md-6">
+      <label for="email" class="form-label">📧 Email address</label>
+      <input type="email" class="form-control" id="email" name="email" required placeholder="e.g. user@example.com">
+      <div class="form-text">We'll never share your email.</div>
     </div>
-  </div>
+
+    <div class="col-md-6">
+      <label for="password" class="form-label">🔒 Password</label>
+      <input type="password" class="form-control" id="password" name="password" required>
+      <div class="form-text">Minimum 6 characters recommended.</div>
+    </div>
+
+    <div class="col-md-6">
+      <label for="full_name" class="form-label">🙍 Full Name</label>
+      <input type="text" class="form-control" id="full_name" name="full_name" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="address" class="form-label">🏠 Address</label>
+      <input type="text" class="form-control" id="address" name="address">
+    </div>
+
+    <div class="col-md-4">
+      <label for="pin_code" class="form-label">📮 Pin Code</label>
+      <input type="text" class="form-control" id="pin_code" name="pin_code" maxlength="6">
+    </div>
+
+    <div class="col-12">
+      <button type="submit" class="btn btn-success">✅ Register</button>
+      <a href="{{ url_for('login') }}" class="btn btn-outline-secondary ms-2">🔑 Already Registered? Login</a>
+    </div>
+  </form>
 </div>
 {% endblock %}

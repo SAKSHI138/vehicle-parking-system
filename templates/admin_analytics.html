@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}📊 Admin Analytics{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">📈 Admin Analytics Dashboard</h2>
+
+  <div class="row g-4">
+
+    <!-- Most Used Lots -->
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">🏢 Most Used Lots</h5>
+          <div class="ratio ratio-4x3">
+            <canvas id="mostUsedLotsChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revenue Chart -->
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">💰 Revenue Over Time</h5>
+          <div class="ratio ratio-4x3">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Avg Duration -->
+    <div class="col-md-12">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">⏱️ Avg Parking Duration per Lot (Hours)</h5>
+          <div class="ratio ratio-16x9">
+            <canvas id="avgDurationChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mt-4">
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">⬅ Back to Dashboard</a>
+  </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const mostUsedLabels = {{ most_used | map(attribute='name') | list | tojson | safe }};
+  const mostUsedData = {{ most_used | map(attribute='total') | list | tojson | safe }};
+  const revenueLabels = {{ revenue_over_time | map(attribute='month') | list | tojson | safe }};
+  const revenueData = {{ revenue_over_time | map(attribute='revenue') | list | tojson | safe }};
+  const durationLabels = {{ avg_duration | map(attribute='name') | list | tojson | safe }};
+  const durationData = {{ avg_duration | map(attribute='avg_hours') | list | tojson | safe }};
+
+  new Chart(document.getElementById('mostUsedLotsChart'), {
+    type: 'bar',
+    data: {
+      labels: mostUsedLabels,
+      datasets: [{
+        label: 'Reservations',
+        data: mostUsedData,
+        backgroundColor: '#0d6efd'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  new Chart(document.getElementById('revenueChart'), {
+    type: 'line',
+    data: {
+      labels: revenueLabels,
+      datasets: [{
+        label: 'Revenue (₹)',
+        data: revenueData,
+        borderColor: '#198754',
+        backgroundColor: 'rgba(25,135,84,0.2)',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true
+    }
+  });
+
+  new Chart(document.getElementById('avgDurationChart'), {
+    type: 'bar',
+    data: {
+      labels: durationLabels,
+      datasets: [{
+        label: 'Avg Hours',
+        data: durationData,
+        backgroundColor: '#ffc107'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } }
+    }
+  });
+</script>
+{% endblock %}

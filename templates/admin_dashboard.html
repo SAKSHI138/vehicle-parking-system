@@ -4,13 +4,65 @@
 {% block content %}
 <div class="container">
   <h2 class="mb-4">👋 Welcome Admin, {{ full_name }}!</h2>
+    {% if alerts %}
+        <div class="alert alert-warning">
+        <strong>⚠️ Overdue Vehicles:</strong>
+        <ul class="mb-0">
+            {% for a in alerts %}
+            <li>
+            <strong>{{ a.vehicle }}</strong> ({{ a.user }}) at <em>{{ a.lot }}</em><br>
+            Since: {{ a.entry_time }}<br>
+            Duration: <span class="text-danger">{{ a.duration }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        </div>
+        {% endif %}
 
+  <!-- 🧮 Summary Stats with Colors -->
+  <div class="row text-center mb-4">
+  <div class="col-md-3">
+    <div class="card bg-primary text-white">
+      <div class="card-body">
+        <h5 class="card-title">🅿️ Total Lots</h5>
+        <p class="card-text fs-4">{{ total_lots }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-success text-white">
+      <div class="card-body">
+        <h5 class="card-title">🔢 Total Spots</h5>
+        <p class="card-text fs-4">{{ total_spots }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-warning text-dark">
+      <div class="card-body">
+        <h5 class="card-title">🚗 Active Reservations</h5>
+        <p class="card-text fs-4">{{ active_reservations }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-info text-white">
+      <div class="card-body">
+        <h5 class="card-title">👥 Users</h5>
+        <p class="card-text fs-4">{{ total_users }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- ⚙️ Admin Options -->
   <div class="list-group">
     <a href="{{ url_for('create_lot') }}" class="list-group-item list-group-item-action">➕ Create Parking Lot</a>
     <a href="{{ url_for('view_lots') }}" class="list-group-item list-group-item-action">📋 View All Parking Lots</a>
-    <a href="{{ url_for('add_lot') }}" class="list-group-item list-group-item-action">➕ Add New Lot</a>
     <a href="{{ url_for('view_users') }}" class="list-group-item list-group-item-action">👥 View All Users</a>
     <a href="{{ url_for('admin_reservations') }}" class="list-group-item list-group-item-action">📜 View All Reservations</a>
+    <a href="{{ url_for('admin_analytics') }}" class="list-group-item list-group-item-action">📊 View Analytics</a>
     <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger">🚪 Logout</a>
   </div>
 </div>

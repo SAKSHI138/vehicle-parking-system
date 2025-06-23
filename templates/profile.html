@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">👤 My Profile</h2>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Full Name</label>
+      <input type="text" name="full_name" class="form-control" value="{{ user.full_name }}" required>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-control" value="{{ user.email }}" disabled>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Address</label>
+      <input type="text" name="address" class="form-control" value="{{ user.address }}">
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Pin Code</label>
+      <input type="text" name="pin_code" class="form-control" value="{{ user.pin_code }}">
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Change Password <span class="text-muted">(optional)</span></label>
+      <input type="password" name="password" class="form-control" placeholder="Enter new password if changing">
+    </div>
+
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary">💾 Update Profile</button>
+      <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary ms-2">⬅ Back</a>
+    </div>
+  </form>
+
+  <hr class="my-4">
+
+  <h4>🚘 Vehicle Numbers Used</h4>
+  {% if vehicles %}
+    <ul class="list-group mt-2">
+      {% for v in vehicles %}
+      <li class="list-group-item">{{ v.vehicle_number }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">No vehicle usage history yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 {% block title %}User Dashboard{% endblock %}
 
@@ -19,8 +20,8 @@
     <div class="alert alert-success">
       ✅ You have already reserved <strong>Spot {{ current_spot.spot_number }}</strong> at <strong>{{ current_lot.name }}</strong>
     </div>
-    <form method="POST" action="{{ url_for('release_spot') }}">
-      <button class="btn btn-danger mb-4" type="submit">🔓 Release My Spot</button>
+    <form action="{{ url_for('release_spot') }}" method="POST" class="mb-4">
+      <button type="submit" class="btn btn-warning">🔓 Release My Spot</button>
     </form>
   {% endif %}
 
@@ -40,9 +41,26 @@
           {% endif %}
         {% else %}
           {% if lot.available_spots > 0 %}
-            <form action="{{ url_for('reserve', lot_id=lot.id) }}" method="post" class="d-inline">
-              <button class="btn btn-primary">🚗 Reserve Spot</button>
-            </form>
+            <form action="{{ url_for('reserve', lot_id=lot.id) }}" method="post" class="row g-2 align-items-end">
+                <div class="col-md-6">
+                    <label for="vehicle_number_{{ lot.id }}" class="form-label">🚘 Vehicle Number</label>
+                    <input
+                    type="text"
+                    id="vehicle_number_{{ lot.id }}"
+                    name="vehicle_number"
+                    class="form-control"
+                    required
+                    placeholder="e.g. MH12AB1234"
+                    pattern="[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}"
+                    title="Format: MH12AB1234"
+                    >
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">🚗 Reserve Spot</button>
+                </div>
+                </form>
+
           {% else %}
             <span class="text-danger">❌ No Spots Available</span>
           {% endif %}
@@ -52,7 +70,7 @@
   {% endfor %}
 
   <div class="mt-4">
-    <a href="{{ url_for('view_lots') }}" class="btn btn-outline-primary me-2">📋 View All Parking Lots</a>
+    <!-- <a href="{{ url_for('view_lots') }}" class="btn btn-outline-primary me-2">📋 View All Parking Lots</a> -->
     <a href="{{ url_for('user_history') }}" class="btn btn-outline-info me-2">🕓 View Parking History</a>
     <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">🚪 Logout</a>
   </div>

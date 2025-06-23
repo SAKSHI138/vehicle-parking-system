@@ -2,57 +2,60 @@
 {% block title %}My Parking History{% endblock %}
 
 {% block content %}
-<div class="container">
-  <h2 class="mb-4">🕒 My Reservation History</h2>
+<div class="container mt-4">
+    <h2 class="mb-4">🕒 My Reservation History</h2>
 
-  {% if history %}
-    <div class="table-responsive">
-      <table class="table table-bordered table-hover align-middle">
-        <thead class="table-dark">
-          <tr>
-            <th>Lot Name</th>
-            <th>Address</th>
-            <th>Spot</th>
-            <th>Vehicle No.</th>
-            <th>Booked At</th>
-            <th>Released At</th>
-            <th>⏱️ Duration</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for entry in history %}
-          <tr>
-            <td>{{ entry.lot_name }}</td>
-            <td>{{ entry.lot_address }}</td>
-            <td>{{ entry.spot_number }}</td>
-            <td>{{ entry.vehicle_number }}</td>
-            <td>{{ entry.pretty_entry }}</td>
-            <td>
-              {% if entry.pretty_exit %}
-                {{ entry.pretty_exit }}
-              {% else %}
-                <span class="text-warning">⏳ In Use</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if entry.duration %}
-                {{ entry.duration }}
-              {% else %}
-                <span class="text-warning">In Progress</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    {% if history %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for entry in history %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ entry.lot_name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ entry.lot_address }}</h6>
+
+                        <p class="mb-1"><strong>Spot:</strong> {{ entry.spot_number }}</p>
+                        <p class="mb-1"><strong>Vehicle No.:</strong> {{ entry.vehicle_number }}</p>
+                        <p class="mb-1"><strong>Booked At:</strong> {{ entry.pretty_entry }}</p>
+
+                        <p class="mb-1">
+                            <strong>Released At:</strong>
+                            {% if entry.pretty_exit %}
+                                {{ entry.pretty_exit }}
+                            {% else %}
+                                <span class="text-warning">⏳ In Use</span>
+                            {% endif %}
+                        </p>
+
+                        <p class="mb-1">
+                            <strong>Duration:</strong>
+                            {% if entry.duration %}
+                                {{ entry.duration }}
+                            {% else %}
+                                <span class="text-warning">In Progress</span>
+                            {% endif %}
+                        </p>
+
+                        {% if entry.cost is not none %}
+                        <p class="mb-0">
+                            <strong>Cost:</strong>
+                            <span class="text-success">₹{{ "%.2f"|format(entry.cost) }}</span>
+                        </p>
+                        {% else %}
+                        <p class="mb-0 text-warning"><strong>Cost:</strong> Pending</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">You have no parking history yet.</div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">⬅ Back to Dashboard</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger ms-2">🔒 Logout</a>
     </div>
-  {% else %}
-    <p>No reservation history found.</p>
-  {% endif %}
-
-  <div class="mt-3">
-    <a href="{{ url_for('user_dashboard') }}" class="btn btn-outline-primary me-2">⬅ Back to Dashboard</a>
-    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">🔒 Logout</a>
-  </div>
 </div>
 {% endblock %}
