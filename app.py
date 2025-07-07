@@ -4,7 +4,6 @@ import os
 from datetime import datetime,timedelta
 import random
 from werkzeug.security import generate_password_hash
-from flask_babel import Babel, _
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for sessions
@@ -12,14 +11,6 @@ DATABASE = 'parking.db'
 # Example: global setting
 MAX_DURATION_MINUTES = 1  # 2 hours
 
-app.config['BABEL_DEFAULT_LOCALE'] = 'en'
-app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'hi']  # Add more as needed
-
-babel = Babel(app)
-
-@babel.localeselector
-def get_locale():
-    return request.accept_languages.best_match(app.config['BABEL_SUPPORTED_LOCALES'])
 
 # Helper function to get DB connection
 def get_db_connection():
@@ -200,19 +191,22 @@ def create_lot():
         address = request.form['address']
         pin_code = request.form['pin_code']
         total_spots = int(request.form['total_spots'])
+        
+        base_price = float(request.form['base_price'])
+        base_duration = int(request.form['base_duration'])
+        extra_hour_price = float(request.form['extra_hour_price'])
 
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Insert the new lot
         cursor.execute('''
-            INSERT INTO parking_lots (name, address, pin_code, total_spots, available_spots)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (name, address, pin_code, total_spots, total_spots))
+            INSERT INTO parking_lots 
+            (name, address, pin_code, total_spots, available_spots, base_price, base_duration, extra_hour_price)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (name, address, pin_code, total_spots, total_spots, base_price, base_duration, extra_hour_price))
 
-        lot_id = cursor.lastrowid  # get ID of newly inserted lot
+        lot_id = cursor.lastrowid
 
-        # Auto-generate parking spots for this lot
         for i in range(1, total_spots + 1):
             spot_number = f"Spot-{i}"
             cursor.execute('''
@@ -401,19 +395,23 @@ def edit_lot(lot_id):
         name = request.form['name']
         address = request.form['address']
         pin_code = request.form['pin_code']
-        # ❗ Note: We do NOT update total_spots or available_spots to avoid data issues
+        base_price = float(request.form['base_price'])
+        base_duration = int(request.form['base_duration'])
+        extra_hour_price = float(request.form['extra_hour_price'])
 
         conn.execute('''
             UPDATE parking_lots 
-            SET name = ?, address = ?, pin_code = ?
+            SET name = ?, address = ?, pin_code = ?,
+                base_price = ?, base_duration = ?, extra_hour_price = ?
             WHERE id = ?
-        ''', (name, address, pin_code, lot_id))
+        ''', (name, address, pin_code, base_price, base_duration, extra_hour_price, lot_id))
         conn.commit()
         conn.close()
         return redirect(url_for('view_lots'))
 
     conn.close()
     return render_template('edit_lot.html', lot=lot)
+
 
     
 @app.route('/reserve/<int:lot_id>', methods=['POST'])
@@ -489,16 +487,16 @@ def release_spot():
     user_id = session['user']['id']
     conn = get_db_connection()
 
-    # Get the spot being used
+    # Get the spot being used by this user
     spot = conn.execute('SELECT * FROM parking_spots WHERE current_user_id = ?', (user_id,)).fetchone()
 
     if spot:
         now = datetime.now()
         now_str = now.isoformat()
 
-        # Get the entry_time from history
+        # Get entry time + lot pricing details
         history = conn.execute('''
-            SELECT ph.id, ph.entry_time, pl.price_per_hour
+            SELECT ph.id, ph.entry_time, pl.base_price, pl.base_duration, pl.extra_hour_price
             FROM parking_history ph
             JOIN parking_lots pl ON ph.lot_id = pl.id
             WHERE ph.user_id = ? AND ph.spot_id = ? AND ph.exit_time IS NULL
@@ -506,27 +504,38 @@ def release_spot():
 
         if history and history['entry_time']:
             entry_time = datetime.fromisoformat(history['entry_time'])
-            duration_seconds = (now - entry_time).total_seconds()
-            duration_hours = duration_seconds / 3600
-            cost = round(duration_hours * history['price_per_hour'], 2)
+            duration = now - entry_time
+            duration_hours = duration.total_seconds() / 3600
+
+            # BASE FEE calculation
+            base_price = history['base_price']
+            base_duration = history['base_duration']
+            extra_hour_price = history['extra_hour_price']
+
+            if duration_hours <= base_duration:
+                cost = round(base_price, 2)
+            else:
+                extra_hours = duration_hours - base_duration
+                cost = round(base_price + (extra_hours * extra_hour_price), 2)
+
         else:
             cost = None
 
-        # Update parking_spots
+        # Mark spot as free
         conn.execute('''
             UPDATE parking_spots 
             SET is_occupied = 0, current_user_id = NULL 
             WHERE id = ?
         ''', (spot['id'],))
 
-        # Update parking_lots availability
+        # Increase lot availability
         conn.execute('''
             UPDATE parking_lots 
             SET available_spots = available_spots + 1 
             WHERE id = ?
         ''', (spot['lot_id'],))
 
-        # Update history with exit_time and cost
+        # Update parking history with exit time & cost
         conn.execute('''
             UPDATE parking_history 
             SET exit_time = ?, cost = ?
@@ -534,7 +543,7 @@ def release_spot():
         ''', (now_str, cost, history['id']))
 
         conn.commit()
-        flash(f"🔓 Spot released successfully! Parking cost: ₹{cost}" if cost else "🔓 Spot released.")
+        flash(f"🔓 Spot released! Total parking cost: ₹{cost:.2f}" if cost else "🔓 Spot released!")
 
     conn.close()
     return redirect(url_for('user_dashboard'))

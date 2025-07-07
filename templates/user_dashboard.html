@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% block title %}User Dashboard{% endblock %}
 
@@ -29,48 +28,56 @@
 
   {% for lot in lots %}
     <div class="card mb-3">
-      <div class="card-body">
-        <h5 class="card-title">{{ lot.name }} – {{ lot.address }}</h5>
-        <p>Total: {{ lot.total_spots }}, Available: {{ lot.available_spots }}</p>
+  <div class="card-body">
+    <h5 class="card-title">{{ lot.name }} – {{ lot.address }}</h5>
+    <p>Total: {{ lot.total_spots }}, Available: {{ lot.available_spots }}</p>
 
-        {% if current_spot %}
-          {% if lot.id == current_lot.id %}
-            <span class="badge bg-success">✅ You have a reservation in this lot</span>
-          {% else %}
-            <span class="badge bg-secondary">🔒 You already have a spot in another lot</span>
-          {% endif %}
-        {% else %}
-          {% if lot.available_spots > 0 %}
-            <form action="{{ url_for('reserve', lot_id=lot.id) }}" method="post" class="row g-2 align-items-end">
-                <div class="col-md-6">
-                    <label for="vehicle_number_{{ lot.id }}" class="form-label">🚘 Vehicle Number</label>
-                    <input
-                    type="text"
-                    id="vehicle_number_{{ lot.id }}"
-                    name="vehicle_number"
-                    class="form-control"
-                    required
-                    placeholder="e.g. MH12AB1234"
-                    pattern="[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}"
-                    title="Format: MH12AB1234"
-                    >
-                </div>
-
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100">🚗 Reserve Spot</button>
-                </div>
-                </form>
-
-          {% else %}
-            <span class="text-danger">❌ No Spots Available</span>
-          {% endif %}
-        {% endif %}
-      </div>
+    <!-- ✅ Stylish pricing badges -->
+    <div class="mb-3">
+      <span class="badge bg-primary">
+        💰 ₹{{ lot.base_price }} / first {{ lot.base_duration }} hrs
+      </span>
+      <span class="badge bg-info text-dark">
+        ➕ ₹{{ lot.extra_hour_price }} / extra hr
+      </span>
     </div>
+
+    {% if current_spot %}
+      {% if lot.id == current_lot.id %}
+        <span class="badge bg-success">✅ You have a reservation in this lot</span>
+      {% else %}
+        <span class="badge bg-secondary">🔒 You already have a spot in another lot</span>
+      {% endif %}
+    {% else %}
+      {% if lot.available_spots > 0 %}
+        <form action="{{ url_for('reserve', lot_id=lot.id) }}" method="post" class="row g-2 align-items-end">
+          <div class="col-md-6">
+            <label for="vehicle_number_{{ lot.id }}" class="form-label">🚘 Vehicle Number</label>
+            <input
+              type="text"
+              id="vehicle_number_{{ lot.id }}"
+              name="vehicle_number"
+              class="form-control"
+              required
+              placeholder="e.g. MH12AB1234"
+              pattern="[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}"
+              title="Format: MH12AB1234"
+            >
+          </div>
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">🚗 Reserve Spot</button>
+          </div>
+        </form>
+      {% else %}
+        <span class="text-danger">❌ No Spots Available</span>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
   {% endfor %}
 
   <div class="mt-4">
-    <!-- <a href="{{ url_for('view_lots') }}" class="btn btn-outline-primary me-2">📋 View All Parking Lots</a> -->
     <a href="{{ url_for('user_history') }}" class="btn btn-outline-info me-2">🕓 View Parking History</a>
     <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">🚪 Logout</a>
   </div>
