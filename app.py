@@ -6,7 +6,7 @@ import random
 from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for sessions
+app.secret_key = 'sakshi'  # Required for sessions
 DATABASE = 'parking.db'
 # Example: global setting
 MAX_DURATION_MINUTES = 1  # 2 hours
@@ -53,7 +53,7 @@ def register():
             conn.commit()
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
-            return "❌ Email already registered. Try logging in."
+            return "Email already registered. Try logging in."
         finally:
             conn.close()
 
@@ -123,9 +123,9 @@ def login():
             else:
                 return redirect(url_for('user_dashboard'))
         else:
-            return render_template('login.html', error='❌ Invalid credentials')
+            return render_template('login.html', error='Invalid credentials')
 
-    # ✅ Always return something here (for GET request)
+    #  Always return something here (for GET request)
     return render_template('login.html')
 
 
@@ -145,7 +145,7 @@ def admin_dashboard():
 
     lots = conn.execute('SELECT * FROM parking_lots').fetchall()
 
-    # 🔔 Time-Based Overdue Alert Logic
+    # Time-Based Overdue Alert Logic
     max_duration = timedelta(minutes=1)  # You can change this to any threshold
     now = datetime.now()
 
@@ -432,7 +432,7 @@ def reserve(lot_id):
 
     if active:
         conn.close()
-        return "❌ You already have an active reservation. Please release it first."
+        return "You already have an active reservation. Please release it first."
 
     # Find a free spot
     spot = conn.execute('''
@@ -443,7 +443,7 @@ def reserve(lot_id):
 
     if not spot:
         conn.close()
-        return "❌ No available spots in this lot."
+        return "No available spots in this lot."
 
     # Reserve spot
     now = datetime.now().isoformat()
@@ -475,7 +475,7 @@ def reserve(lot_id):
     conn.commit()
     conn.close()
     # After successful reservation
-    flash("✅ Spot reserved successfully!")
+    flash("Spot reserved successfully!")
     return redirect(url_for('user_dashboard'))
 
 
@@ -620,14 +620,14 @@ def delete_lot(lot_id):
 
     if active > 0 or history > 0:
         conn.close()
-        flash('❌ Cannot delete: This lot has active or past reservations.', 'danger')
+        flash('Cannot delete: This lot has active or past reservations.', 'danger')
         return redirect(url_for('view_lots'))
 
     conn.execute('DELETE FROM parking_lots WHERE id = ?', (lot_id,))
     conn.commit()
     conn.close()
 
-    flash('✅ Parking lot deleted successfully.', 'success')
+    flash('Parking lot deleted successfully.', 'success')
     return redirect(url_for('view_lots'))
 
 
@@ -710,7 +710,7 @@ def admin_analytics():
 
     conn = get_db_connection()
 
-    # 1. Most Used Lots
+    # Most Used Lots
     most_used = conn.execute('''
         SELECT l.name, COUNT(r.id) as total
         FROM parking_history r
@@ -719,7 +719,7 @@ def admin_analytics():
         ORDER BY total DESC
     ''').fetchall()
 
-    # 2. Total Revenue Over Time (monthly)
+    #  Total Revenue Over Time (monthly)
     revenue_over_time = conn.execute('''
         SELECT strftime('%Y-%m', entry_time) AS month, SUM(cost) as revenue
         FROM parking_history
@@ -728,7 +728,7 @@ def admin_analytics():
         ORDER BY month
     ''').fetchall()
 
-    # 3. Average Parking Duration
+    #  Average Parking Duration
     avg_duration = conn.execute('''
         SELECT l.name, AVG(
             julianday(exit_time) - julianday(entry_time)
